@@ -27,9 +27,22 @@ pipeline {
         stage('Test Image') {
             steps {
                 script {
-                    sh "docker run -d --name test-container-${DOCKER_TAG} -p 8080:80 ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    // Find a free port to use for testing
+                    def testPort = sh(script: """
+                        for port in {8081..8100}; do
+                            if ! netstat -tuln | grep -q ":$port "; then
+                                echo \$port
+                                break
+                            fi
+                        done
+                    """, returnStdout: true).trim()
+                    
+                    echo "Using port ${testPort} for test container"
+                    
+                    // Run the container with the available port
+                    sh "docker run -d --name test-container-${DOCKER_TAG} -p ${testPort}:80 ${DOCKER_IMAGE}:${DOCKER_TAG}"
                     sh "sleep 5"
-                    sh "curl -s http://localhost:8080 | grep -q 'My Website'"
+                    sh "curl -s http://localhost:${testPort} | grep -q 'My Website'"
                     sh "docker stop test-container-${DOCKER_TAG}"
                     sh "docker rm test-container-${DOCKER_TAG}"
                 }
