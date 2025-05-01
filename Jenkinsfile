@@ -34,9 +34,11 @@ pipeline {
         stage('Deploy Container') {
             steps {
                 echo 'Deploying container'
-                sh 'docker stop simple-webpage-container  true'
-                sh 'docker rm simple-webpage-container  true'
-                sh 'docker run -d --restart always -p 80:80 --name simple-webpage-container $DOCKER_IMAGE'
+                sh '''
+                    docker stop simple-webpage-container || true
+                    docker rm simple-webpage-container || true
+                    docker run -d --restart always -p 80:80 --name simple-webpage-container $DOCKER_IMAGE
+                '''
             }
         }
     }
